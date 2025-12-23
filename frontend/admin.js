@@ -1,7 +1,4 @@
-console.log("admin.js loaded");
-console.log("btnSync element:", document.getElementById("btnSync"));
-
-const API_BASE = "http://127.0.0.1:8000";
+const API_BASE = window.location.origin;
 const qs = (id) => document.getElementById(id);
 
 qs("apiBaseLabel").textContent = API_BASE;
