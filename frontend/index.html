@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Narren Uiengaardinho MoreSwagPrinsCent-KempJagers</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <header class="container">
+    <h1>Narren Uiengaardinho MoreSwagPrinsCent-KempJagers</h1>
+
+    <div class="controls">
+      <label>
+        Matchday:
+        <input id="matchday" type="number" min="1" value="1" />
+      </label>
+      <button id="load">Laad scoreboard</button>
+    </div>
+
+    <p id="meta" class="muted"></p>
+  </header>
+
+  <main class="container">
+    <div id="error" class="error" hidden></div>
+
+    <table id="table" hidden>
+      <thead>
+        <tr>
+          <th>Team</th>
+          <th>1X2</th>
+          <th>Bonus</th>
+          <th>Coach</th>
+          <th>Totaal</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </main>
+
+  <script src="./app.js"></script>
+</body>
+</html>
