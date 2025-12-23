@@ -7,7 +7,7 @@ import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from db import connect, init_db
+from backend.db import connect, init_db
 
 LEAGUE_NAME = "Narren Uiengaardinho MoreSwagPrinsCent-KempJagers"
 COMPETITION_CODE = "DED"  # Eredivisie in football-data.org
