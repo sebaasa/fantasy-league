@@ -393,6 +393,99 @@ def get_coach_points(matchday: int):
         "coach_points": {r["team"]: r["points"] for r in rows},
     }
 
+@app.get("/api/season/standings")
+def season_standings():
+    conn = connect()
+
+    rounds = conn.execute("SELECT id, matchday FROM rounds ORDER BY matchday ASC").fetchall()
+    teams = conn.execute("SELECT id, name FROM teams").fetchall()
+
+    # Preload coach points per round/team
+    coach_rows = conn.execute(
+        "SELECT round_id, team_id, points FROM coach_points"
+    ).fetchall()
+    coach_map = {(r["round_id"], r["team_id"]): int(r["points"]) for r in coach_rows}
+
+    totals = {t["id"]: {"team": t["name"], "total": 0.0, "points_1x2": 0.0, "bonus": 0.0, "coach": 0.0} for t in teams}
+
+    # Helper: outcome + odd lookup
+    def _outcome(sh, sa):
+        if sh is None or sa is None:
+            return None
+        if sh > sa: return "1"
+        if sh < sa: return "2"
+        return "X"
+
+    def _odd_for_pick(row, pick):
+        return {"1": row["odd_1"], "X": row["odd_x"], "2": row["odd_2"]}.get(pick)
+
+    for rr in rounds:
+        round_id = rr["id"]
+
+        matches = conn.execute(
+            """SELECT m.id, m.score_home, m.score_away, o.odd_1, o.odd_x, o.odd_2
+               FROM matches m
+               LEFT JOIN odds o ON o.match_id = m.id
+               WHERE m.round_id=?""",
+            (round_id,),
+        ).fetchall()
+
+        preds = conn.execute(
+            """SELECT team_id, match_id, pick
+               FROM predictions
+               WHERE round_id=?""",
+            (round_id,),
+        ).fetchall()
+
+        # per team: som van correcte odds
+        round_1x2 = {t["id"]: 0.0 for t in teams}
+
+        match_by_id = {m["id"]: m for m in matches}
+
+        for p in preds:
+            m = match_by_id.get(p["match_id"])
+            if not m:
+                continue
+            out = _outcome(m["score_home"], m["score_away"])
+            if out is None:
+                continue  # match nog niet klaar
+            if p["pick"] == out:
+                odd = _odd_for_pick(m, p["pick"])
+                if odd is not None:
+                    round_1x2[p["team_id"]] += float(odd)
+
+        # bonus: +2 verdeeld over hoogste 1x2 score van deze matchday
+        max_score = max(round_1x2.values()) if round_1x2 else 0.0
+        winners = [tid for tid, s in round_1x2.items() if s == max_score and s > 0]
+        bonus_each = (2.0 / len(winners)) if winners else 0.0
+
+        for t in teams:
+            tid = t["id"]
+            p1x2 = round_1x2.get(tid, 0.0)
+            b = bonus_each if tid in winners else 0.0
+            c = float(coach_map.get((round_id, tid), 0))
+
+            totals[tid]["points_1x2"] += p1x2
+            totals[tid]["bonus"] += b
+            totals[tid]["coach"] += c
+            totals[tid]["total"] += (p1x2 + b + c)
+
+    conn.close()
+
+    rows = list(totals.values())
+    # sort: total desc
+    rows.sort(key=lambda r: r["total"], reverse=True)
+
+    # rond af voor nette weergave
+    for r in rows:
+        r["points_1x2"] = round(r["points_1x2"], 3)
+        r["bonus"] = round(r["bonus"], 3)
+        r["coach"] = int(r["coach"]) if float(r["coach"]).is_integer() else round(r["coach"], 3)
+        r["total"] = round(r["total"], 3)
+
+    return {"rows": rows}
+
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 app.mount(

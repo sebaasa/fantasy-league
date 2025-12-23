@@ -11,17 +11,20 @@ function setError(msg) {
 function render(rows) {
   const tbody = qs("tbody");
   tbody.innerHTML = "";
-  for (const r of rows) {
+
+  rows.forEach((r, idx) => {
     const tr = document.createElement("tr");
     tr.innerHTML = `
+      <td>${idx + 1}</td>
       <td>${r.team}</td>
       <td>${r.points_1x2}</td>
       <td>${r.bonus}</td>
-      <td>${r.coach_points}</td>
-      <td><strong>${r.total_round}</strong></td>
+      <td>${r.coach}</td>
+      <td><strong>${r.total}</strong></td>
     `;
     tbody.appendChild(tr);
-  }
+  });
+
   qs("table").hidden = false;
 }
 
@@ -29,17 +32,16 @@ async function load() {
   setError(null);
   qs("table").hidden = true;
 
-  const matchday = Number(qs("matchday").value || 1);
-  const res = await fetch(`${API_BASE}/api/rounds/${matchday}/scoreboard`);
+  const res = await fetch(`${API_BASE}/api/season/standings`);
   const data = await res.json();
 
-  if (!res.ok || data.error) {
-    setError(data.error || JSON.stringify(data));
+  if (!res.ok) {
+    setError(data?.detail || data?.error || `Error ${res.status}`);
     return;
   }
 
-  qs("meta").textContent = `Scoreboard matchday ${data.matchday}`;
   render(data.rows || []);
 }
 
-qs("load").addEventListener("click", load);
+qs("reload").addEventListener("click", load);
+load();
