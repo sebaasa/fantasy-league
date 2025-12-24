@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin login — Narren Uiengaardinho MoreSwagPrinsCent-KempJagers</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <style>
+    .login-card {
+      max-width: 420px;
+      margin: 80px auto;
+      border: 1px solid #eee;
+      border-radius: 12px;
+      padding: 24px;
+      background: #fff;
+    }
+    .login-card h1 { margin-top: 0; }
+    .login-card input { width: 100%; }
+    .login-card button { width: 100%; margin-top: 10px; background: #111; color: #fff; }
+  </style>
+</head>
+<body>
+  <main class="container">
+    <section class="login-card">
+      <h1>Admin login</h1>
+      <p class="muted">Log in om wedstrijden, odds en picks te beheren.</p>
+
+      <form id="loginForm">
+        <label>
+          Wachtwoord
+          <input id="password" type="password" autocomplete="current-password" required />
+        </label>
+        <button type="submit">Inloggen</button>
+        <div id="error" class="error" hidden></div>
+      </form>
+    </section>
+  </main>
+
+  <script src="./admin-login.js"></script>
+</body>
+</html>

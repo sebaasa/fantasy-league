@@ -1,6 +1,32 @@
 const API_BASE = window.location.origin;
 const qs = (id) => document.getElementById(id);
 
+const ADMIN_AUTH_KEY = "fantasy_admin_auth_v1";
+const ADMIN_AUTH_TTL_MS = 12 * 60 * 60 * 1000;
+
+function isAdminAuthed() {
+  const raw = localStorage.getItem(ADMIN_AUTH_KEY);
+  if (!raw) return false;
+  try {
+    const data = JSON.parse(raw);
+    if (!data || typeof data.ts !== "number") return false;
+    return (Date.now() - data.ts) < ADMIN_AUTH_TTL_MS;
+  } catch {
+    return false;
+  }
+}
+
+function enforceAdminAuth() {
+  if (isAdminAuthed()) return true;
+  const returnTo = encodeURIComponent("admin.html");
+  window.location.href = `./admin-login.html?return=${returnTo}`;
+  return false;
+}
+
+if (!enforceAdminAuth()) {
+  throw new Error("Admin auth required.");
+}
+
 qs("apiBaseLabel").textContent = API_BASE;
 
 let teams = [];
@@ -125,6 +151,11 @@ qs("btnScoreboard").addEventListener("click", async () => {
     setError(e.message);
     setStatus("Error");
   }
+});
+
+qs("btnLogout").addEventListener("click", () => {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+  window.location.href = "./admin-login.html";
 });
 
 // ---------- Matches & Odds ----------
