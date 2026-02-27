@@ -105,6 +105,46 @@ async function init() {
 
 init();
 
+// ---------- Auto-Sync actions ----------
+
+qs("btnSyncLatest").addEventListener("click", async () => {
+  setError(null);
+  setOk(null);
+  setStatus("Syncing latest results…");
+  try {
+    const data = await apiFetch(`/api/admin/sync-latest-results`, { method: "POST" });
+    setOk(`✓ ${data.message} (inserted: ${data.inserted}, updated: ${data.updated})`);
+    setStatus("Loading matches…");
+    await loadMatches();
+    setStatus("Ready");
+  } catch (e) {
+    setError(e.message);
+    setStatus("Error");
+  }
+});
+
+qs("btnCheckSyncStatus").addEventListener("click", async () => {
+  setError(null);
+  try {
+    const data = await apiFetch(`/api/admin/sync-status`);
+    const statusDiv = qs("syncStatus");
+    statusDiv.style.display = "block";
+    
+    const lastSync = data.last_sync ? new Date(data.last_sync).toLocaleString() : "Never";
+    const lastError = data.last_error || "None";
+    const schedulerStatus = data.scheduler_running ? `Running (every ${data.sync_interval_minutes} min)` : "Stopped";
+    
+    qs("lastSyncTime").textContent = lastSync;
+    qs("lastSyncError").textContent = lastError;
+    qs("schedulerStatus").textContent = schedulerStatus;
+    
+    setStatus("Ready");
+  } catch (e) {
+    setError(e.message);
+    setStatus("Error");
+  }
+});
+
 // ---------- Round actions ----------
 
 qs("btnSync").addEventListener("click", async () => {

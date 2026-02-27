@@ -35,6 +35,22 @@
   <main class="container">
 
     <section class="card">
+      <h2>Auto-Sync Status</h2>
+      <p class="small">Results are automatically synced every 30 minutes. You can also manually trigger a sync.</p>
+      
+      <div class="controls">
+        <button id="btnSyncLatest" class="btn-success">Sync Latest Results Now</button>
+        <button id="btnCheckSyncStatus" class="btn-secondary">Check Sync Status</button>
+      </div>
+
+      <div id="syncStatus" class="mutedbox" style="margin-top:12px; display:none;">
+        <div><strong>Last Sync:</strong> <span id="lastSyncTime">Never</span></div>
+        <div><strong>Last Error:</strong> <span id="lastSyncError">None</span></div>
+        <div><strong>Scheduler:</strong> <span id="schedulerStatus">Unknown</span></div>
+      </div>
+    </section>
+
+    <section class="card">
       <h2>1) Matches + Odds (Unibet)</h2>
       <p class="small">
         Vul odds in per match (1 / X / 2). Deze worden gebruikt als punten wanneer een voorspelling correct is.

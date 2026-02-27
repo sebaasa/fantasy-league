@@ -112,6 +112,8 @@ button:active { transform: translateY(0); box-shadow: none; }
 .btn-secondary:hover { background: #e6e8ec; }
 .btn-danger { background: #ffe7e6; color: #5a0f0a; }
 .btn-danger:hover { background: #ffd7d4; }
+.btn-success { background: #d1f0d4; color: #0a5a1a; }
+.btn-success:hover { background: #b8e8bf; }
 
 .card {
   border: 1px solid var(--border);

@@ -6,6 +6,8 @@ import time
 import requests
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from apscheduler.schedulers.background import BackgroundScheduler
+from datetime import datetime
 
 from backend.db import connect, init_db
 
@@ -36,9 +38,78 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Background scheduler for automatic result syncing
+scheduler = BackgroundScheduler()
+_sync_status = {"last_sync": None, "last_error": None}
+
+def _auto_sync_results():
+    """Automatically sync latest matchday results from football-data.org"""
+    try:
+        conn = connect()
+        # Get the latest matchday
+        round_row = conn.execute("SELECT matchday FROM rounds ORDER BY matchday DESC LIMIT 1").fetchone()
+        conn.close()
+        
+        if not round_row:
+            return
+        
+        latest_matchday = round_row["matchday"]
+        # Call the sync endpoint internally
+        sync_result = sync_round_matches(latest_matchday, season=None)
+        _sync_status["last_sync"] = datetime.now().isoformat()
+        _sync_status["last_error"] = None
+        print(f"[AUTO-SYNC] Successfully synced matchday {latest_matchday}: {sync_result}")
+    except Exception as e:
+        _sync_status["last_error"] = str(e)
+        print(f"[AUTO-SYNC] Error: {e}")
+
 @app.on_event("startup")
 def _startup():
     init_db()
+    # Start scheduler that syncs results every 30 minutes
+    if not scheduler.running:
+        scheduler.add_job(_auto_sync_results, 'interval', minutes=30, id='auto_sync_results', replace_existing=True)
+        scheduler.start()
+
+@app.on_event("shutdown")
+def _shutdown():
+    if scheduler.running:
+        scheduler.shutdown()
+
+
+@app.post("/api/admin/sync-latest-results")
+def sync_latest_results():
+    """Manually trigger sync of latest matchday results"""
+    try:
+        conn = connect()
+        round_row = conn.execute("SELECT matchday FROM rounds ORDER BY matchday DESC LIMIT 1").fetchone()
+        conn.close()
+        
+        if not round_row:
+            raise HTTPException(400, "No rounds found. Create one first.")
+        
+        latest_matchday = round_row["matchday"]
+        sync_result = sync_round_matches(latest_matchday, season=None)
+        return {
+            "success": True,
+            "message": f"Synced matchday {latest_matchday}",
+            "inserted": sync_result.get("inserted", 0),
+            "updated": sync_result.get("updated", 0),
+        }
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@app.get("/api/admin/sync-status")
+def get_sync_status():
+    """Get status of automatic syncing"""
+    return {
+        "last_sync": _sync_status["last_sync"],
+        "last_error": _sync_status["last_error"],
+        "scheduler_running": scheduler.running,
+        "sync_interval_minutes": 30,
+    }
+
 
 @app.get("/api/meta")
 def meta():
